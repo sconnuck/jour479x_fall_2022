@@ -68,3 +68,47 @@ differential <- logs %>%
 Penalties <- lm(point_differential ~ differential) summary(Penalties)
 ```
 
+```{r}
+library(tidyverse)
+```
+```{r}
+logs <- read_csv('http://mattwaite.github.io/sportsdatafiles/footballlogs1121.csv')
+```
+```{r}
+differential <- logs %>%
+  mutate(point_differential = (TeamScore-OpponentScore))
+```
+```{r}
+model <- lm(point_differential ~ Penalties, data=differential)
+summary(model)
+```
+The p-value here is 0.1856, making the relationship between point differential and number of penalties not statistically significant. The adjusted R-squared value is 0.002627, meaning the two are 0.002627 percent related to each other. So, like the example in the textbook, and based on how I'm seeing this data, I don't think we can say that teams are necessarily going to lose more games if they commit more penalties. That's suprising to me, as I feel like penalties definitely impact the outcome of a game. Maryland football the last two weeks does contribute to this, though — they beat SMU despite 15 penalties and lost to No. 4 Michigan with one.
+```{r}
+differential <- logs %>% mutate(
+  TurnoverMargin = TotalTurnovers - DefTotalTurnovers)
+summary(differential)
+```
+I tried to add "turnovermargin" here, kind of like the example did with soccer. Either way, I don't think this stat will have an impact on point differential.
+```{r}
+
+model <- lm(point_differential ~ FirstDownTotal, data=differential)
+summary(model)
+```
+I think first down total is a good way to assess an offense. The more first downs a team gets, the closer it gets to touchdowns. This model says that we can predict just 21.82% of the difference in point differential is attricuted to the first downs scored. 
+```{r}
+differential %>% filter(point_differential < 7)
+```
+```{r}
+model <- lm(point_differential ~ Interceptions, data=differential)
+summary(model)
+```
+I believe this says that nearly 12% (11.89%) of games close games — less than a touchdown — can be examined by using the number of interceptions. That seems a bit inconclusive.
+```{r}
+model <- lm(point_differential ~ PassingYds, data=differential)
+summary(model)
+```
+```{r}
+model <- lm(point_differential ~ PassingCmp, data=differential)
+summary(model)
+```
+Clearly, none of the data I got was very conclusive. But thinking about it, I think that makes sense. Like the Maryland football penalties example, winning isn't always going to be impacted by certain statistics. They could be, and that's why some of these things are happening 20% of the time. But in reality, it feels like sports are just unpredictable. I feel like the story here is that it's difficult to really predict or assess the outcomes of college football games because of these statistics, and that anything could happen on any given Saturday.
