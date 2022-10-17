@@ -1,0 +1,27 @@
+---
+title: "background.rmd"
+author: "Shane Connuck"
+date: "2022-10-06"
+output: html_document
+---
+I want to pursue the question about the Nets. While it seems tougher, I think it's just as doable. There were 16 games in which those three players — Kevin Durant, Kyrie Irving and James Harden — were all healthy and played. The Nets went 13-3 in those games, but didn't finish a season higher than the Eastern Conference's No. 2 seed in the regular season, before choking the Bucks in a seven-game series when those guys got hurt. How many more points would the Nets put up with those three compared to the rest of the team? How much more of an impact was it for the Nets to have Kyrie Irving playing instead of Bruce Brown?
+
+I found the Brooklyn Nets' 2020-21 stats on Basketball Reference, but I'm unsure how to get those from the website into RStudio. From there, I would need to filter the data to show games where all three of them played, and then I would compare it to games they played with two of them, one, and when none of their stars suited up.
+
+There has been a lot of talk about how the pretty much failed experiment of the "Big Three" went, and I want to dive into the impact they had and the classic "What could have been."
+```{r}
+library(tidyverse)
+```
+```{r}
+nba <- read_csv("https://hoopr.sportsdataverse.org/articles/getting-started-hoopR.html#nba-player-box-scores-2020-2021")
+```
+```{r}
+tictoc::tic()
+progressr::with_progress({
+  nba_player_box <- hoopR::load_nba_player_box(2016:2021)
+})
+tictoc::toc()
+```
+I'm having some problems loading the data here; tried a few different things.
+
+More specifically, I want to focus this presentation on the following question: How many more points would the Brooklyn Nets score in the 2020-21 season during the 16 games in which Kevin Durant, Kyrie Irving and James Harden all played compared to the rest of the team?
