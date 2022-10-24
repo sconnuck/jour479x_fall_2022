@@ -4,8 +4,60 @@ author: "Shane Connuck"
 date: "2022-10-06"
 output: html_document
 ---
-I want to pursue the question about the Nets. While it seems tougher, I think it's just as doable. There were 16 games in which those three players — Kevin Durant, Kyrie Irving and James Harden — were all healthy and played. The Nets went 13-3 in those games, but didn't finish a season higher than the Eastern Conference's No. 2 seed in the regular season, before choking the Bucks in a seven-game series when those guys got hurt. How many more points would the Nets put up with those three compared to the rest of the team? How much more of an impact was it for the Nets to have Kyrie Irving playing instead of Bruce Brown?
+```{r}
+library(tidyverse)
+```
+Last time, I was trying to use the play-by-play data. That contained every single play from every NBA game from 2016 to 2021. I'm trying to find out about some games the Nets played during one season. So, I decided it wasn't the best dataframe to use.
 
-I found the Brooklyn Nets' 2020-21 stats on Basketball Reference, but I'm unsure how to get those from the website into RStudio. From there, I would need to filter the data to show games where all three of them played, and then I would compare it to games they played with two of them, one, and when none of their stars suited up.
+Instead, let's take a look at the NBA player box scores. I'm going to specify that this is for the 2020-2021 season and not all five years.
+```{r}
+tictoc::tic()
+progressr::with_progress({
+  nba_player_box <- hoopR::load_nba_player_box(2020:2021)
+})
+tictoc::toc()
+```
+```{r}
+glue::glue("{nrow(nba_player_box)} rows of NBA player boxscore data from {length(unique(nba_player_box$game_id))} games.")
+```
 
-There has been a lot of talk about how the pretty much failed experiment of the "Big Three" went, and I want to dive into the impact they had and the classic "What could have been."
+```{r}
+dplyr::glimpse(nba_player_box)
+```
+```{r}
+nba_player_box %>% 
+  filter(team_short_display_name == "Nets") %>% 
+  group_by(athlete_display_name)
+```
+Ah, there are the guys.
+```{r}
+nba_player_box %>% 
+  filter(team_short_display_name == "Nets") %>% 
+  filter(athlete_display_name == "Kevin Durant") %>% 
+  summarise(athlete_display_name, pts)
+```
+So, this is showing all of the points Kevin Durant scored during the 47 games he played.
+```{r}
+nba_player_box %>% 
+  filter(team_short_display_name == "Nets") %>% 
+  filter(athlete_display_name == "James Harden") %>% 
+  summarise(athlete_display_name, pts)
+```
+Class five-point and scoreless performances from the now 76er.
+```{r}
+nba_player_box %>% 
+  filter(team_short_display_name == "Nets") %>% 
+  filter(athlete_display_name == "Kyrie Irving") %>% 
+  summarise(athlete_display_name, pts)
+```
+Somehow, Kyrie played in the most games out of the three in that season.
+
+So, what I'm trying to find here is the number of game box scores in which all three of those names showed up. Then, compare their scoring to the rest of the team.
+
+However, these box scores are showing each individual player's statistic, while the team box scores I've loaded as well don't have any individual players mentioned.
+```{r}
+nba_player_box %>% 
+  filter(team_short_display_name == "Nets") %>% 
+  group_by(athlete_display_name == "Kevin Durant", athlete_display_name == "Kyrie Irving", athlete_display_name == "James Harden", active == "FALSE")
+```
+So, I'm seeing that I'm going to have to use the "active" column to determine which games those players suited up.
