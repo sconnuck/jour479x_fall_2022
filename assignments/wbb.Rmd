@@ -1,0 +1,107 @@
+---
+title: "WBB.rmd"
+author: "Shane Connuck"
+date: "2022-11-17"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(usdata)
+```
+
+```{r}
+rosters23 <- read.csv("https://github.com/dwillis/wbb-rosters/raw/main/rosters_2022-23.csv")
+```
+
+# Things to Clean
+
+* Drop where Name is NA
+* Standardize Positions
+* Standardizing State (would need to extract)
+* Standardizing Year (dealing with redshirts & also grad students)
+* Standardizing Height (5'10" or 5-10)
+
+# Columns to Add
+
+* State
+* Country
+* Height in inches
+
+```{r}
+rosters23 %>% distinct(state) %>% arrange(state)
+```
+```{r}
+roster23_clean <- rosters23 %>% mutate(hometown_clean = str_to_lower(hometown))
+
+roster23_clean <- roster23_clean %>% separate(col=hometown_clean, into=c("new_hometown", "state"), sep=",", extra="merge")
+```
+```{r}
+roster23_clean %>% distinct(state) %>% arrange(state)
+```
+```{r}
+roster23_clean <- roster23_clean %>% 
+  mutate(state = str_trim(state), state = str_replace(state, '\\.','')) %>% 
+  mutate(state = case_when(
+    clean_position == "G" ~ "Guard",
+    clean_position == "F" ~ "Forward",
+     is.na(abbr2state(state)) ~ state,
+     TRUE ~ abbr2state(state))
+  )
+```
+
+```{r}
+roster23_clean %>% group_by(position) %>% summarise(players=n()) %>% arrange(desc(players))
+```
+```{r}
+roster23_clean <- roster23_clean %>% 
+  mutate(clean_position = position) %>% 
+  mutate(clean_position = case_when(
+    clean_position == "G" ~ "Guard",
+    clean_position == "F" ~ "Forward",
+    TRUE ~ clean_position
+    
+  ))
+```
+
+This will clean up the data with the heights. We're replacing heights listed like 6'4" with 6-4 to easily separate feet and inches:
+```{r}
+roster23_clean <- roster23_clean %>% 
+  mutate(height_clean = str_replace(height, "'", '-')) %>% 
+  mutate(height_clean = str_replace(height_clean, "’", '-')) %>% 
+  mutate(height_clean = str_replace(height_clean, "''", '')) %>% 
+  mutate(height_clean = str_replace(height_clean, '"', '')) %>%
+  separate(height_clean, c('feet', 'inches'), sep="-") %>% 
+  mutate(feet = as.numeric(feet), inches = as.numeric(inches)) %>%
+  mutate(total_inches = (feet*12)+inches)
+  
+# identify the weird ones and make a list of them
+
+#  separate(height_clean, c('feet', 'inches'), sep="-")
+# get rid of extra spaces
+
+# convert feet and inches to numeric
+# multiply feet * 12
+# create new column adding feet + inches
+```
+
+We see now, looking at distinct inches, that there are some people with heights listed as N/A. Let's see how many:
+
+```{r}
+roster23_clean %>% 
+  group_by(inches) %>% 
+  summarise(
+    total = n()
+  )
+```
+Looks like 98 are not available.
+```{r}
+roster23_clean %>% filter(is.na(inches)) %>% group_by(team) %>% summarize(count = n()) %>% arrange(desc(count))
+```
+Salem (W.Va.) does have heights for its players, but they don't show up on the initial roster, which contains the players' names, hometowns and virtually every standard identifer except height, but the players' pages have heights on there written as "5-6."
+
+Same thing with Geneva. So, I think what we have to do is for some of these schools with unavailable heights, just look at the individual player's pages on the roster.
+
+Westminster (Utah), Sarah Lawrence, Southwest Baptist, Wheeling and Oakland do not have heights listed for some of their new players.
+
+Pomona-Pitzer is a different story than all these. The Claremont, California, college lists does have a roster on its site with all the information we need, but because it is formatted differently we'll have to deal with it accordingly. Wheaton (Mass.) has its site like that as well.
